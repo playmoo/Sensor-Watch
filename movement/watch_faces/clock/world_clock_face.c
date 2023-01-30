@@ -33,13 +33,15 @@ void world_clock_face_setup(movement_settings_t *settings, uint8_t watch_face_in
     (void) watch_face_index;
     if (*context_ptr == NULL) {
         *context_ptr = malloc(sizeof(world_clock_state_t));
+        world_clock_state_t *state = (world_clock_state_t *)*context_ptr;
         memset(*context_ptr, 0, sizeof(world_clock_state_t));
         uint8_t backup_register = movement_claim_backup_register();
         if (backup_register) {
-            world_clock_state_t *state = (world_clock_state_t *)*context_ptr;
             state->settings.reg = watch_get_backup_data(backup_register);
             state->backup_register = backup_register;
         }
+
+        state->watch_face_index = watch_face_index;
     }
 }
 
@@ -116,6 +118,10 @@ static bool world_clock_face_do_display_mode(movement_event_t event, movement_se
         case EVENT_ALARM_LONG_PRESS:
             movement_request_tick_frequency(4);
             state->current_screen = 1;
+            break;
+        case EVENT_ALARM_BUTTON_UP:
+            settings->bit.clock_mode_24h = !(settings->bit.clock_mode_24h);
+            movement_move_to_face(state->watch_face_index);
             break;
         default:
             return movement_default_loop_handler(event, settings);
